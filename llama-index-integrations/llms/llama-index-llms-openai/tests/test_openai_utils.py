@@ -21,6 +21,7 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
     ToolCallBlock,
+    VideoBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.llms.openai import OpenAI
@@ -334,6 +335,56 @@ def test_to_openai_message_dicts_with_content_blocks_with_detail() -> None:
                     "detail": "high",
                 },
             },
+        ],
+    }
+
+
+def test_to_openai_message_dicts_with_video_url() -> None:
+    chat_message = ChatMessage(
+        role=MessageRole.USER,
+        blocks=[
+            TextBlock(text="Summarize this video."),
+            VideoBlock(
+                url="https://example.com/video.mp4",
+                detail="high",
+                fps=2,
+            ),
+        ],
+    )
+
+    openai_message = to_openai_message_dicts([chat_message])[0]
+    assert openai_message == {
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "Summarize this video."},
+            {
+                "type": "video_url",
+                "video_url": {
+                    "url": "https://example.com/video.mp4",
+                    "detail": "high",
+                    "fps": 2,
+                },
+            },
+        ],
+    }
+
+
+def test_to_openai_message_dicts_with_inline_video() -> None:
+    chat_message = ChatMessage(
+        role=MessageRole.USER,
+        blocks=[VideoBlock(video=b"video bytes", video_mimetype="video/mp4")],
+    )
+
+    openai_message = to_openai_message_dicts([chat_message])[0]
+    assert openai_message == {
+        "role": "user",
+        "content": [
+            {
+                "type": "video_url",
+                "video_url": {
+                    "url": "data:video/mp4;base64,dmlkZW8gYnl0ZXM=",
+                },
+            }
         ],
     }
 

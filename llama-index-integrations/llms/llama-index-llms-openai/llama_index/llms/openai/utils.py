@@ -30,6 +30,7 @@ from llama_index.core.base.llms.types import (
     TextBlock,
     ThinkingBlock,
     ToolCallBlock,
+    VideoBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessageToolCall
@@ -493,6 +494,21 @@ def to_openai_message_dict(
                         "data": audio_str,
                         "format": block.format,
                     },
+                }
+            )
+        elif isinstance(block, VideoBlock):
+            video_url: Dict[str, Any] = {
+                "url": str(block.url) if block.url else block.inline_url(),
+            }
+            if block.detail:
+                video_url["detail"] = block.detail
+            if block.fps is not None:
+                video_url["fps"] = block.fps
+
+            content.append(
+                {
+                    "type": "video_url",
+                    "video_url": video_url,
                 }
             )
         elif isinstance(block, ThinkingBlock):
